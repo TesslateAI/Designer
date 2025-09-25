@@ -52,15 +52,24 @@ jobs:
 
       - name: Prepare standalone deployment
         run: |
-          cp -r .next/standalone ./dist
-          cp -r public ./dist/public
-          cp -r .next/static ./dist/.next/static
+          mkdir -p deploy
+          cp -r .next/standalone/* ./deploy/
+          cp -r public ./deploy/public
+          cp -r .next/static ./deploy/.next/static
+
+      - name: Create startup script
+        run: |
+          cat > deploy/startup.sh << 'EOF'
+          #!/bin/bash
+          node server.js
+          EOF
+          chmod +x deploy/startup.sh
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: dist/
+          path: deploy/
 
   deploy:
     runs-on: ubuntu-latest
