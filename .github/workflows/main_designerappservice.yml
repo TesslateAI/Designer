@@ -53,26 +53,21 @@ jobs:
           NEXT_PUBLIC_BASE_URL: ${{ secrets.NEXT_PUBLIC_BASE_URL }}
           BASE_URL: ${{ secrets.BASE_URL }}
 
-      - name: Prepare standalone deployment
+      - name: Prepare deployment
         run: |
-          # Move static files to standalone directory
-          cp -r .next/static .next/standalone/.next/static
-          cp -r public .next/standalone/public || true
+          # Remove development files
+          rm -rf .git .github .husky
+          rm -rf *.md .gitignore .env*
 
-          # List what we're deploying for debugging
-          echo "Contents of standalone directory:"
-          ls -la .next/standalone/
-
-          # Ensure package.json exists with start script
-          if [ ! -f .next/standalone/package.json ]; then
-            echo '{"name":"app","scripts":{"start":"node server.js"}}' > .next/standalone/package.json
-          fi
+          # List what we're deploying
+          echo "=== Deployment contents ==="
+          ls -la
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: .next/standalone/
+          path: .
 
   deploy:
     runs-on: ubuntu-latest
