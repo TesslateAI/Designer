@@ -52,3 +52,6 @@ public/previews/
 # Deployment scripts with secrets
 deploy-script.sh
 production-deploy.sh
+
+# Azure settings (contains secrets)
+azure-app-settings.json
