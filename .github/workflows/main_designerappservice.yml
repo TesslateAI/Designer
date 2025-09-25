@@ -27,10 +27,11 @@ jobs:
         uses: pnpm/action-setup@v2
         with:
           version: 8
+          run_install: false
 
       - name: Install dependencies and build
         run: |
-          pnpm install
+          pnpm install --no-frozen-lockfile
           pnpm build
         env:
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
