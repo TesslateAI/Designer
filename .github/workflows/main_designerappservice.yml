@@ -54,8 +54,9 @@ jobs:
         run: |
           mkdir -p deploy
           cp -r .next/standalone/* ./deploy/
-          cp -r public ./deploy/public
+          mkdir -p ./deploy/.next
           cp -r .next/static ./deploy/.next/static
+          cp -r public ./deploy/public || echo "No public directory to copy"
 
       - name: Create startup script
         run: |
