@@ -59,6 +59,15 @@ jobs:
           cp -r .next/static .next/standalone/.next/static
           cp -r public .next/standalone/public || true
 
+          # List what we're deploying for debugging
+          echo "Contents of standalone directory:"
+          ls -la .next/standalone/
+
+          # Ensure package.json exists with start script
+          if [ ! -f .next/standalone/package.json ]; then
+            echo '{"name":"app","scripts":{"start":"node server.js"}}' > .next/standalone/package.json
+          fi
+
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
