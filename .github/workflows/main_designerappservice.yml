@@ -55,15 +55,20 @@ jobs:
 
       - name: Prepare deployment
         run: |
-          # Remove development files
+          # Remove development files but keep .next
           rm -rf .git .github .husky
           rm -rf *.md .gitignore .env*
 
-          # List what we're deploying
+          # Create a deployment package with .next included
           echo "=== Deployment contents ==="
           ls -la
-          echo "=== .next directory contents ==="
-          ls -la .next/ || echo ".next directory not found!"
+          echo "=== Checking .next directory ==="
+          if [ -d ".next" ]; then
+            echo ".next directory found with $(du -sh .next | cut -f1) of data"
+          else
+            echo "ERROR: .next directory not found!"
+            exit 1
+          fi
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4

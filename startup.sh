@@ -12,30 +12,18 @@ cd /home/site/wwwroot
 if [ -f "package.json" ]; then
     echo "Found package.json"
 
-    # Install dependencies if needed
-    if [ ! -d "node_modules" ]; then
-        echo "Installing dependencies with pnpm..."
-        npm install -g pnpm
-        pnpm install --prod
-    fi
-
     # Check if .next directory exists
     if [ -d ".next" ]; then
-        echo "Found .next directory, starting with npm start..."
+        echo "Found .next directory"
+        echo "Starting application with npm start..."
         npm start
     else
-        echo ".next directory not found! Installing all dependencies and building..."
-        npm install -g pnpm
-        pnpm install
-        pnpm build
-        echo "Build complete, starting application..."
-        npm start
+        echo "ERROR: .next directory not found!"
+        echo "This deployment requires a pre-built .next directory"
+        exit 1
     fi
-elif [ -f "server.js" ]; then
-    echo "Found standalone server.js, running directly..."
-    node server.js
 else
-    echo "ERROR: No package.json or server.js found!"
+    echo "ERROR: No package.json found!"
     echo "Available files:"
     ls -la
     exit 1
