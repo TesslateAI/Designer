@@ -24,8 +24,9 @@ if [ -f "package.json" ]; then
         echo "Found .next directory, starting with npm start..."
         npm start
     else
-        echo ".next directory not found! Building the application..."
+        echo ".next directory not found! Installing all dependencies and building..."
         npm install -g pnpm
+        pnpm install
         pnpm build
         echo "Build complete, starting application..."
         npm start
