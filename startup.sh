@@ -14,8 +14,9 @@ if [ -f "package.json" ]; then
 
     # Install dependencies if needed
     if [ ! -d "node_modules" ]; then
-        echo "Installing dependencies..."
-        npm install --production
+        echo "Installing dependencies with pnpm..."
+        npm install -g pnpm
+        pnpm install --prod
     fi
 
     # Check if .next directory exists
