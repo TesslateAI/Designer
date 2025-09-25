@@ -62,6 +62,8 @@ jobs:
           # List what we're deploying
           echo "=== Deployment contents ==="
           ls -la
+          echo "=== .next directory contents ==="
+          ls -la .next/ || echo ".next directory not found!"
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4

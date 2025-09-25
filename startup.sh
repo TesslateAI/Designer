@@ -24,8 +24,11 @@ if [ -f "package.json" ]; then
         echo "Found .next directory, starting with npm start..."
         npm start
     else
-        echo "ERROR: .next directory not found!"
-        exit 1
+        echo ".next directory not found! Building the application..."
+        npm install -g pnpm
+        pnpm build
+        echo "Build complete, starting application..."
+        npm start
     fi
 elif [ -f "server.js" ]; then
     echo "Found standalone server.js, running directly..."
