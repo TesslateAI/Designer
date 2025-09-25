@@ -53,23 +53,17 @@ jobs:
           NEXT_PUBLIC_BASE_URL: ${{ secrets.NEXT_PUBLIC_BASE_URL }}
           BASE_URL: ${{ secrets.BASE_URL }}
 
-      - name: Clean up for deployment
+      - name: Prepare standalone deployment
         run: |
-          rm -rf node_modules
-          rm -rf .git
+          # Move static files to standalone directory
+          cp -r .next/static .next/standalone/.next/static
+          cp -r public .next/standalone/public || true
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: |
-            .
-            !.git
-            !.github
-            !.husky
-            !*.md
-            !.gitignore
-            !.env*
+          path: .next/standalone/
 
   deploy:
     runs-on: ubuntu-latest
