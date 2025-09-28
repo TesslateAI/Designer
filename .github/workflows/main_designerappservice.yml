@@ -55,49 +55,32 @@ jobs:
 
       - name: Prepare deployment
         run: |
-            # Remove development files but keep .next and other required files
-            rm -rf .git .github .husky
-            rm -rf *.md .gitignore .env*
-            
-            # Explicitly check .next exists before proceeding
-            if [ ! -d ".next" ]; then
-              echo "ERROR: .next directory not found after build!"
-              exit 1
-            fi
-            
-            # Create a deployment package with all required files
-            echo "=== Creating deployment package ==="
-            mkdir -p deployment
-            
-            # Copy essential files
-            cp -r .next deployment/
-            cp package.json deployment/
-            cp -r node_modules deployment/ || echo "Warning: node_modules not copied"
-            cp -r public deployment/ || echo "Warning: public not copied"
-            cp startup.sh deployment/
-            cp next.config.* deployment/ || echo "Warning: next.config not found"
-            
-            # Replace current directory with deployment
-            rm -rf .next package.json node_modules public startup.sh next.config.*
-            mv deployment/* .
-            rmdir deployment
-            
-            echo "=== Final deployment contents ==="
-            ls -la
-            echo "=== Checking .next directory ==="
-            if [ -d ".next" ]; then
-              echo ".next directory found with $(du -sh .next | cut -f1) of data"
-              ls -la .next/
-            else
-              echo "ERROR: .next directory still missing!"
-              exit 1
-            fi
-
-      - name: Upload artifact for deployment job
-        uses: actions/upload-artifact@v4
-        with:
-          name: node-app
-          path: .
+          # Remove development files but keep .next
+          rm -rf .git .github .husky
+          rm -rf *.md .gitignore .env*
+          
+          # Explicitly check .next exists before proceeding
+          if [ ! -d ".next" ]; then
+            echo "ERROR: .next directory not found after build!"
+            exit 1
+          fi
+          
+          echo "=== Deployment contents ==="
+          ls -la
+          echo "=== Checking .next directory ==="
+          if [ -d ".next" ]; then
+            echo ".next directory found with $(du -sh .next | cut -f1) of data"
+            ls -la .next/
+          else
+            echo "ERROR: .next directory missing!"
+            exit 1
+          fi
+      
+            - name: Upload artifact for deployment job
+              uses: actions/upload-artifact@v4
+              with:
+                name: node-app
+                path: .
 
   deploy:
     runs-on: ubuntu-latest
@@ -128,3 +111,4 @@ jobs:
           package: .
 
           
+
