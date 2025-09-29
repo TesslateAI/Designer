@@ -1,0 +1,103 @@
+name: Deploy Tesslate Designer to Azure
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - name: Login to ACR
+      uses: azure/docker-login@v1
+      with:
+        login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+        username: ${{ secrets.ACR_USERNAME }}
+        password: ${{ secrets.ACR_PASSWORD }}
+    
+    - name: Build and push Docker image
+      run: |
+        docker build . \
+          --build-arg BASE_URL=https://designer.tesslate.com \
+          --build-arg NEXT_PUBLIC_BASE_URL=https://designer.tesslate.com \
+          --build-arg POSTGRES_URL="${{ secrets.POSTGRES_URL }}" \
+          --build-arg STRIPE_PLUS_PRICE_ID="${{ secrets.STRIPE_PLUS_PRICE_ID }}" \
+          --build-arg STRIPE_PRO_PRICE_ID="${{ secrets.STRIPE_PRO_PRICE_ID }}" \
+          --build-arg LITELLM_MASTER_KEY="${{ secrets.LITELLM_MASTER_KEY }}" \
+          -t ${{ secrets.ACR_LOGIN_SERVER }}/tesslate-designer:${{ github.sha }} \
+          -t ${{ secrets.ACR_LOGIN_SERVER }}/tesslate-designer:latest
+        docker push ${{ secrets.ACR_LOGIN_SERVER }}/tesslate-designer:${{ github.sha }}
+        docker push ${{ secrets.ACR_LOGIN_SERVER }}/tesslate-designer:latest
+    
+    - name: Deploy to Container Apps
+      uses: azure/CLI@v1
+      with:
+        inlineScript: |
+          # Check if app exists
+          if az containerapp show --name tesslate-designer --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} &> /dev/null; then
+            echo "Updating existing app..."
+            az containerapp update \
+              --name tesslate-designer \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --image ${{ secrets.ACR_LOGIN_SERVER }}/tesslate-designer:${{ github.sha }} \
+              --set-env-vars \
+                "NODE_ENV=production" \
+                "BASE_URL=https://designer.tesslate.com" \
+                "NEXT_PUBLIC_BASE_URL=https://designer.tesslate.com" \
+                "POSTGRES_URL=secretref:postgres-url" \
+                "STRIPE_PLUS_PRICE_ID=secretref:stripe-plus-price" \
+                "STRIPE_PRO_PRICE_ID=secretref:stripe-pro-price" \
+                "LITELLM_MASTER_KEY=secretref:litellm-key" \
+                "LITELLM_PROXY_URL=http://litellm-proxy:4000"
+          else
+            echo "Creating new app..."
+            # First create secrets
+            az containerapp secret set \
+              --name tesslate-designer \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --secrets \
+                "postgres-url=${{ secrets.POSTGRES_URL }}" \
+                "stripe-plus-price=${{ secrets.STRIPE_PLUS_PRICE_ID }}" \
+                "stripe-pro-price=${{ secrets.STRIPE_PRO_PRICE_ID }}" \
+                "litellm-key=${{ secrets.LITELLM_MASTER_KEY }}" \
+                "acr-password=${{ secrets.ACR_PASSWORD }}"
+            
+            # Create container app
+            az containerapp create \
+              --name tesslate-designer \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --environment ${{ secrets.AZURE_CONTAINERAPP_ENV }} \
+              --image ${{ secrets.ACR_LOGIN_SERVER }}/tesslate-designer:${{ github.sha }} \
+              --target-port 3000 \
+              --ingress external \
+              --registry-server ${{ secrets.ACR_LOGIN_SERVER }} \
+              --registry-username ${{ secrets.ACR_USERNAME }} \
+              --registry-password-secret-ref acr-password \
+              --cpu 1 \
+              --memory 2Gi \
+              --min-replicas 1 \
+              --max-replicas 10 \
+              --env-vars \
+                "NODE_ENV=production" \
+                "BASE_URL=https://designer.tesslate.com" \
+                "NEXT_PUBLIC_BASE_URL=https://designer.tesslate.com" \
+                "POSTGRES_URL=secretref:postgres-url" \
+                "STRIPE_PLUS_PRICE_ID=secretref:stripe-plus-price" \
+                "STRIPE_PRO_PRICE_ID=secretref:stripe-pro-price" \
+                "LITELLM_MASTER_KEY=secretref:litellm-key" \
+                "LITELLM_PROXY_URL=http://litellm-proxy:4000"
+          fi
+          
+          # Get app URL
+          echo "App URL:"
+          az containerapp show --name tesslate-designer --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --query properties.configuration.ingress.fqdn --output tsv
