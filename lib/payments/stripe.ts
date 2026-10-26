@@ -9,7 +9,7 @@ import { PlanName } from '@/lib/litellm/plans';
 // to prevent server-only code from being imported into client components.
 
 interface WebhookSubscriptionObject extends Stripe.Subscription {
-  current_period_end: number; // Unix timestamp in seconds
+  current_period_end?: number; // Unix timestamp in seconds; removed from the subscription, now on items
 }
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
@@ -21,7 +21,13 @@ export async function handleSubscriptionChange(
   const subscriptionId = subscription.id;
   const status = subscription.status;
   const cancelAtPeriodEnd = subscription.cancel_at_period_end;
-  const currentPeriodEnd = subscription.current_period_end * 1000;
+  const periodEndSeconds =
+    (subscription.items.data[0] as { current_period_end?: number } | undefined)?.current_period_end ??
+    subscription.current_period_end;
+  if (typeof periodEndSeconds !== 'number') {
+    throw new Error('Subscription current_period_end not found on subscription or its items.');
+  }
+  const currentPeriodEnd = periodEndSeconds * 1000;
   const now = Date.now();
 
   const stripeRecord = await getStripeByCustomerId(customerId);

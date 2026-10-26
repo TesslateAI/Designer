@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
   }
 
   interface WebhookSubscriptionObject extends Stripe.Subscription {
-    current_period_end: number;
+    current_period_end?: number;
   }
 
   console.log('Processing webhook event', {
